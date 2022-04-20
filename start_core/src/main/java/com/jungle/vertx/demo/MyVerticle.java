@@ -20,12 +20,15 @@ public class MyVerticle extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
+
+
         server = vertx.createHttpServer().requestHandler(req -> {
             req.response().putHeader("content-type", "text/plain")
                     .end("Hello Jungle!!");
         });
 
         server.listen(9965, res -> {
+            System.out.println("context.config() = " + context.config());
             if (res.succeeded()) {
                 startPromise.complete();
             } else {
