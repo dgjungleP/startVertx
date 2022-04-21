@@ -34,7 +34,6 @@ public class ClusterVertxCore {
                 System.out.println("Failed:" + res.cause());
             }
         });
-
     }
 
 }
