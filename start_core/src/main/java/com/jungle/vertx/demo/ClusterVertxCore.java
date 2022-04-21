@@ -20,6 +20,13 @@ public class ClusterVertxCore {
                 Vertx vertx = res.result();
 
                 EventBus eventBus = vertx.eventBus();
+                eventBus.consumer("Hello", (message) -> {
+                    System.out.println(message.body());
+                });
+                eventBus.send("Hello", "World");
+                eventBus.send("Hello", "World");
+                eventBus.send("Hello", "World");
+                eventBus.send("Hello", "World");
 
                 System.out.println("There is a Event Bus:" + eventBus);
 
