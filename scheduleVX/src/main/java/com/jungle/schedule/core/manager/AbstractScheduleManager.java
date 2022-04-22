@@ -2,7 +2,6 @@ package com.jungle.schedule.core.manager;
 
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
-import com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverXPointer;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
