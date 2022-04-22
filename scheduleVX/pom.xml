@@ -18,6 +18,7 @@
         <vertx.verticle>com.jungle.vertx.demo.MyVerticle</vertx.verticle>
         <!-- Maven plugins -->
         <vertx-maven-plugin.version>1.0.17</vertx-maven-plugin.version>
+        <hutool.version>5.7.13</hutool.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -40,6 +41,11 @@
             <artifactId>lombok</artifactId>
             <version>1.18.22</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>cn.hutool</groupId>-->
+<!--            <artifactId>hutool-http</artifactId>-->
+<!--            <version>${hutool.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
     <build>
         <plugins>

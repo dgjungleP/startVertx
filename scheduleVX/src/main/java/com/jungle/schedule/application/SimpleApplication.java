@@ -7,6 +7,7 @@ public class SimpleApplication {
 
     public static void main(String[] args) {
         SimpleScheduleManager manager = new SimpleScheduleManager();
+
         manager.loadSchedule(RequestScheduleDefinition.simplePeriodic());
         manager.loadSchedule(RequestScheduleDefinition.simplePeriodic());
         manager.loadSchedule(RequestScheduleDefinition.simpleTimer());
