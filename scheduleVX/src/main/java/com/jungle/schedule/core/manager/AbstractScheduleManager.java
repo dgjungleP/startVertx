@@ -4,7 +4,6 @@ import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,19 +22,21 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         prepare();
     }
 
-    public AbstractScheduleManager() {
-        VertxOptions options = new VertxOptions();
-        options.setWorkerPoolSize(50);
-        vertx = Vertx.vertx(options);
-        prepare();
-    }
 
     private void prepare() {
     }
 
     @Override
     public ManagerInfo getInfo() {
-        return null;
+        return buildManagerInfo();
+    }
+
+    protected ManagerInfo buildManagerInfo() {
+        ManagerInfo info = new ManagerInfo();
+        info.setPeriodicScheduleList(new ArrayList<>(PERIODIC_MAP.values()));
+        info.setTimerScheduleList(new ArrayList<>(TIMER_MAP.values()));
+        return info;
+
     }
 
     @Override

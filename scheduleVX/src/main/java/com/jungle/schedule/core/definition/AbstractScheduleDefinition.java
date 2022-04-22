@@ -5,6 +5,7 @@ import com.jungle.schedule.enums.StatusType;
 import io.vertx.core.Handler;
 import lombok.Data;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Data
@@ -17,6 +18,9 @@ public abstract class AbstractScheduleDefinition implements ScheduleDefinition {
 
 
     public Long getCurrentDelay() {
+        if (Objects.isNull(delay) || Objects.isNull(unit)) {
+            return TimeUnit.MILLISECONDS.toMillis(1000L);
+        }
         return unit.toMillis(delay);
     }
 }

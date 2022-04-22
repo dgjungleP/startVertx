@@ -34,18 +34,15 @@ public class RequestScheduleDefinition extends AbstractScheduleDefinition {
         RequestScheduleDefinition definition = new RequestScheduleDefinition();
         definition.setDelay(1L);
         definition.setUnit(TimeUnit.SECONDS);
+        definition.setMethod(Method.GET);
+        definition.setRequestLink("http://localhost:9965/schedule-info");
         return definition;
     }
 
     @Override
     public Handler<Long> handler() {
         return res -> {
-            HttpResponse response = RequestUtil.execute(this.method, this.requestLink);
-            if (response.isOk()) {
-                System.out.println(response.body());
-            } else {
-                System.out.println("Failed:");
-            }
+            RequestUtil.execute(this.method, this.requestLink);
         };
     }
 }
