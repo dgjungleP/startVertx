@@ -1,25 +1,22 @@
 package com.jungle.schedule.util;
 
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpMethod;
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.http.Method;
 
 public class RequestUtil {
-    private static final HttpClient httpClient;
 
-    static {
-        httpClient = Vertx.vertx().createHttpClient();
-    }
 
     private RequestUtil() {
 
 
     }
 
-    public Future<HttpClientRequest> get(String url) {
-        return httpClient.request(HttpMethod.GET, url);
+    public static HttpResponse execute(Method method, String url) {
+        HttpRequest request = HttpUtil.createRequest(method, url);
+
+        return request.execute();
     }
 
 

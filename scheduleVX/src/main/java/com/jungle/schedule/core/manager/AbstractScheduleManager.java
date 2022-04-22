@@ -1,5 +1,6 @@
 package com.jungle.schedule.core.manager;
 
+import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
 import io.vertx.core.Vertx;
@@ -30,6 +31,11 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     }
 
     private void prepare() {
+    }
+
+    @Override
+    public ManagerInfo getInfo() {
+        return null;
     }
 
     @Override

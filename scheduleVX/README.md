@@ -5,9 +5,9 @@
 | --- | --- |
 | Vert.x | 响应式框架 |
 | Lombok | 代码工具|
-
+| hutool-http| 网络请求工具|
 
 ## Version List
 ### 0.0.1
 - [x] 简单的本地版本封装
-- [ ] HttpUtil封装
+- [x] HttpUtil封装
