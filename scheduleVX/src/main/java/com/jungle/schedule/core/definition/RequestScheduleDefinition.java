@@ -5,6 +5,7 @@ import cn.hutool.http.Method;
 import com.jungle.schedule.enums.ScheduleType;
 import com.jungle.schedule.util.RequestUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.json.JsonObject;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -36,6 +37,13 @@ public class RequestScheduleDefinition extends AbstractScheduleDefinition {
         definition.setUnit(TimeUnit.SECONDS);
         definition.setMethod(Method.GET);
         definition.setRequestLink("http://localhost:9965/schedule-info");
+        return definition;
+    }
+
+    public static ScheduleDefinition buildWithJson(JsonObject requestBody) {
+        RequestScheduleDefinition definition = simplePeriodic();
+        String name = requestBody.getString("name");
+        definition.setName(name);
         return definition;
     }
 
