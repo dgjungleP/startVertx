@@ -3,21 +3,21 @@ package com.jungle.schedule.core.manager;
 import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
+import com.jungle.schedule.util.IDUtil;
 import io.vertx.core.Vertx;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import javax.sound.midi.Soundbank;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractScheduleManager implements ScheduleManager {
 
     protected final Vertx vertx;
-    private final Map<Long, ScheduleDefinition> PERIODIC_MAP = new ConcurrentHashMap<>();
-    private final Map<Long, ScheduleDefinition> TIMER_MAP = new ConcurrentHashMap<>();
-    private final Map<Long, Long> INCREASE_MAP = new ConcurrentHashMap<>();
+    private final Map<String, ScheduleDefinition> PERIODIC_MAP = new ConcurrentHashMap<>();
+    private final Map<String, ScheduleDefinition> TIMER_MAP = new ConcurrentHashMap<>();
+    private final Map<Long, ScheduleDefinition> RUNNING_MAP = new ConcurrentHashMap<>();
+    private final Map<String, Long> INCREASE_MAP = new ConcurrentHashMap<>();
     private final List<ScheduleLoader> SCHEDULE_LOADER_LIST = new ArrayList<>();
     private final AtomicInteger runningTimes = new AtomicInteger(0);
 
@@ -48,7 +48,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         info.setTimerScheduleList(new ArrayList<>(timerValue));
         info.setCurrentCount(periodicValue.size() + timerValue.size());
         info.setTotalRunningTime(runningTimes.get());
-        info.setRunningCount(0);
+        info.setRunningCount(RUNNING_MAP.values().size());
         return info;
 
     }
@@ -66,24 +66,31 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     }
 
     private void loadTimer(ScheduleDefinition definition) {
+        String scheduleId = fillScheduleId(definition);
         long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
-        definition.setId(id);
-        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> {
-            this.increase();
-        });
+        definition.setTimerId(id);
+        TIMER_MAP.put(scheduleId, definition);
+        startIncrease(definition, scheduleId);
+    }
 
-        TIMER_MAP.put(id, definition);
-        INCREASE_MAP.put(id, increaseId);
+    private void startIncrease(ScheduleDefinition definition, String scheduleId) {
+        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> this.increase());
+        INCREASE_MAP.put(scheduleId, increaseId);
+        RUNNING_MAP.put(definition.getTimerId(), definition);
     }
 
     private void loadPeriodic(ScheduleDefinition definition) {
+        String scheduleId = fillScheduleId(definition);
         long id = vertx.setPeriodic(definition.getCurrentDelay(), definition.handler());
-        definition.setId(id);
-        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> {
-            this.increase();
-        });
-        PERIODIC_MAP.put(id, definition);
-        INCREASE_MAP.put(id, increaseId);
+        definition.setTimerId(id);
+        PERIODIC_MAP.put(scheduleId, definition);
+        startIncrease(definition, scheduleId);
+    }
+
+    private String fillScheduleId(ScheduleDefinition definition) {
+        String scheduleId = IDUtil.randomId();
+        definition.setId(scheduleId);
+        return scheduleId;
     }
 
     public void load() {
@@ -92,5 +99,28 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             scheduleDefinitions.addAll(loader.load());
         }
         scheduleDefinitions.forEach(this::loadSchedule);
+    }
+
+    @Override
+    public void stopSchedule(String id) {
+        ScheduleDefinition schedule = getSchedule(id);
+        if (schedule == null) {
+            System.out.println("Not found the schedule:" + id);
+            return;
+        }
+        Long timerId = schedule.getTimerId();
+        RUNNING_MAP.remove(timerId);
+        INCREASE_MAP.remove(id);
+        vertx.cancelTimer(timerId);
+    }
+
+    private ScheduleDefinition getSchedule(String id) {
+        if (PERIODIC_MAP.containsKey(id)) {
+            return PERIODIC_MAP.get(id);
+        }
+        if (TIMER_MAP.containsKey(id)) {
+            return TIMER_MAP.get(id);
+        }
+        return null;
     }
 }

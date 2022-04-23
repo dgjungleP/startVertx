@@ -12,7 +12,8 @@ import java.util.concurrent.TimeUnit;
 @Data
 public abstract class AbstractScheduleDefinition implements ScheduleDefinition {
     protected ScheduleType type;
-    protected Long id;
+    protected String id;
+    protected Long timerId;
     protected StatusType status;
     protected Long delay;
     protected TimeUnit unit;

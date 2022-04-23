@@ -4,9 +4,11 @@ import com.alibaba.fastjson.JSON;
 import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.RequestScheduleDefinition;
 import com.jungle.schedule.core.definition.SimpleScheduleDefinition;
+import com.jungle.schedule.core.definition.VerticalScheduleDefinition;
 import com.jungle.schedule.core.manager.ScheduleManager;
 import com.jungle.schedule.core.manager.SimpleScheduleManager;
 import com.jungle.schedule.enums.ScheduleType;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -70,15 +72,18 @@ public class SimpleApplication {
         });
 
         router.post("/load/vertical").handler(ctx -> {
-            JsonObject bodyAsJson = ctx.getBodyAsJson();
-            System.out.println(bodyAsJson);
-
+            ctx.request().body().onSuccess(res -> {
+                JsonObject requestBody = res.toJsonObject();
+                schedulesManager.loadSchedule(new VerticalScheduleDefinition().buildWithJson(requestBody));
+            });
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");
             response.end(Buffer.buffer("Success!"));
         });
 
         router.post("/stop/schedule").handler(ctx -> {
+            String id = ctx.queryParam("id").get(0);
+            schedulesManager.stopSchedule(id);
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");
             response.end(Buffer.buffer("Success!"));

@@ -10,7 +10,13 @@ public interface ScheduleDefinition {
 
     ScheduleType getType();
 
-    void setId(Long id);
+    void setId(String id);
+
+    String getId();
+
+    void setTimerId(Long id);
+
+    Long getTimerId();
 
 
 }

@@ -8,4 +8,6 @@ public interface ScheduleManager {
     void loadSchedule(ScheduleDefinition definition);
 
     ManagerInfo getInfo();
+
+    void stopSchedule(String id);
 }
