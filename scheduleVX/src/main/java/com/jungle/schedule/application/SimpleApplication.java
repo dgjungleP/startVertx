@@ -8,7 +8,6 @@ import com.jungle.schedule.core.definition.VerticalScheduleDefinition;
 import com.jungle.schedule.core.manager.ScheduleManager;
 import com.jungle.schedule.core.manager.SimpleScheduleManager;
 import com.jungle.schedule.enums.ScheduleType;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -83,17 +82,18 @@ public class SimpleApplication {
 
         router.post("/stop/schedule").handler(ctx -> {
             String id = ctx.queryParam("id").get(0);
-            schedulesManager.stopSchedule(id);
+            Boolean success = schedulesManager.stopSchedule(id);
+
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");
-            response.end(Buffer.buffer("Success!"));
+            response.end(Buffer.buffer(success ? "Success!" : "Failed!"));
         });
         router.post("/start/schedule").handler(ctx -> {
             String id = ctx.queryParam("id").get(0);
-            schedulesManager.startSchedule(id);
+            Boolean success = schedulesManager.startSchedule(id);
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");
-            response.end(Buffer.buffer("Success!"));
+            response.end(Buffer.buffer(success ? "Success!" : "Failed!"));
         });
     }
 
@@ -106,12 +106,8 @@ public class SimpleApplication {
         final ScheduleManager schedulesManager = (SimpleScheduleManager) vertx.getOrCreateContext().get("schedules_manager");
         SimpleScheduleDefinition definition = new SimpleScheduleDefinition();
         definition.setType(ScheduleType.PERIODIC);
-        definition.setHandler(handler -> {
-            System.out.println("Running Success!");
-        });
+        definition.setHandler(handler -> System.out.println("Heart Beats!"));
         schedulesManager.loadSchedule(definition);
-        schedulesManager.loadSchedule(RequestScheduleDefinition.simplePeriodic());
-
     }
 
     private static Vertx buildVertx() {

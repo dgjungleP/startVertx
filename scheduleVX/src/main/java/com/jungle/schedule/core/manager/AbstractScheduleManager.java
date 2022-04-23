@@ -54,33 +54,33 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     }
 
     @Override
-    public void loadSchedule(ScheduleDefinition definition) {
+    public Boolean loadSchedule(ScheduleDefinition definition) {
         switch (definition.getType()) {
             case PERIODIC:
-                loadPeriodic(definition);
-                break;
+                return loadPeriodic(definition);
             case TIMER:
-                loadTimer(definition);
-                break;
+                return loadTimer(definition);
         }
+        return false;
     }
 
-    protected void startSchedule(ScheduleDefinition definition) {
+    protected Boolean startSchedule(ScheduleDefinition definition) {
         switch (definition.getType()) {
             case PERIODIC:
-                startPeriodic(definition);
-                break;
+                return startPeriodic(definition);
+
             case TIMER:
-                startTimer(definition);
-                break;
+                return startTimer(definition);
+
         }
+        return false;
     }
 
 
-    private void loadTimer(ScheduleDefinition definition) {
+    private Boolean loadTimer(ScheduleDefinition definition) {
         String scheduleId = fillScheduleId(definition);
         TIMER_MAP.put(scheduleId, definition);
-        startSchedule(scheduleId);
+        return startSchedule(scheduleId);
     }
 
     private void startIncrease(ScheduleDefinition definition) {
@@ -89,22 +89,24 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         RUNNING_MAP.put(definition.getTimerId(), definition);
     }
 
-    private void loadPeriodic(ScheduleDefinition definition) {
+    private Boolean loadPeriodic(ScheduleDefinition definition) {
         String scheduleId = fillScheduleId(definition);
         PERIODIC_MAP.put(scheduleId, definition);
-        startSchedule(scheduleId);
+        return startSchedule(scheduleId);
     }
 
-    private void startTimer(ScheduleDefinition definition) {
+    private Boolean startTimer(ScheduleDefinition definition) {
         long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
         definition.setTimerId(id);
         startIncrease(definition);
+        return true;
     }
 
-    private void startPeriodic(ScheduleDefinition definition) {
+    private Boolean startPeriodic(ScheduleDefinition definition) {
         long id = vertx.setPeriodic(definition.getCurrentDelay(), definition.handler());
         definition.setTimerId(id);
         startIncrease(definition);
+        return true;
     }
 
     private String fillScheduleId(ScheduleDefinition definition) {
@@ -122,26 +124,27 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     }
 
     @Override
-    public void stopSchedule(String id) {
+    public Boolean stopSchedule(String id) {
         ScheduleDefinition schedule = getSchedule(id);
         if (schedule == null) {
             System.out.println("Not found the schedule:" + id);
-            return;
+            return false;
         }
         Long timerId = schedule.getTimerId();
         RUNNING_MAP.remove(timerId);
         INCREASE_MAP.remove(id);
         vertx.cancelTimer(timerId);
+        return true;
     }
 
     @Override
-    public void startSchedule(String id) {
+    public Boolean startSchedule(String id) {
         ScheduleDefinition schedule = getSchedule(id);
         if (schedule == null) {
             System.out.println("Not found the schedule:" + id);
-            return;
+            return false;
         }
-        startSchedule(schedule);
+        return startSchedule(schedule);
     }
 
     private ScheduleDefinition getSchedule(String id) {
