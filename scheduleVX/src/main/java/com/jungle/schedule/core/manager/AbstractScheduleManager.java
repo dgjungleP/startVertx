@@ -3,6 +3,7 @@ package com.jungle.schedule.core.manager;
 import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
+import com.jungle.schedule.enums.StatusType;
 import com.jungle.schedule.util.IDUtil;
 import io.vertx.core.Vertx;
 
@@ -87,6 +88,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> this.increase());
         INCREASE_MAP.put(definition.getId(), increaseId);
         RUNNING_MAP.put(definition.getTimerId(), definition);
+        definition.setStatus(StatusType.RUNNING);
     }
 
     private Boolean loadPeriodic(ScheduleDefinition definition) {
@@ -131,10 +133,15 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             return false;
         }
         Long timerId = schedule.getTimerId();
+        if (timerId != null && !RUNNING_MAP.containsKey(schedule.getTimerId())) {
+            System.out.println("This schedule :" + id + "  is not running!");
+            return false;
+        }
         RUNNING_MAP.remove(timerId);
         Long increaseId = INCREASE_MAP.remove(id);
         vertx.cancelTimer(timerId);
         vertx.cancelTimer(increaseId);
+        schedule.setStatus(StatusType.STOP);
         return true;
     }
 
@@ -143,6 +150,11 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         ScheduleDefinition schedule = getSchedule(id);
         if (schedule == null) {
             System.out.println("Not found the schedule:" + id);
+            return false;
+        }
+        Long timerId = schedule.getTimerId();
+        if (timerId != null && RUNNING_MAP.containsKey(timerId)) {
+            System.out.println("This schedule :" + id + "  has running!");
             return false;
         }
         return startSchedule(schedule);
