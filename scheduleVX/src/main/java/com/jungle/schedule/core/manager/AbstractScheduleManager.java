@@ -132,8 +132,9 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         }
         Long timerId = schedule.getTimerId();
         RUNNING_MAP.remove(timerId);
-        INCREASE_MAP.remove(id);
+        Long increaseId = INCREASE_MAP.remove(id);
         vertx.cancelTimer(timerId);
+        vertx.cancelTimer(increaseId);
         return true;
     }
 

@@ -105,6 +105,8 @@ public class SimpleApplication {
     private static void loadBaseSchedule() {
         final ScheduleManager schedulesManager = (SimpleScheduleManager) vertx.getOrCreateContext().get("schedules_manager");
         SimpleScheduleDefinition definition = new SimpleScheduleDefinition();
+        definition.setName("系统监控");
+        definition.setDescription("监控系统的数据指标");
         definition.setType(ScheduleType.PERIODIC);
         definition.setHandler(handler -> System.out.println("Heart Beats!"));
         schedulesManager.loadSchedule(definition);
