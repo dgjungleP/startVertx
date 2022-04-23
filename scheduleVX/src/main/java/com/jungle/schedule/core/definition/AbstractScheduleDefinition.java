@@ -15,6 +15,8 @@ public abstract class AbstractScheduleDefinition implements ScheduleDefinition {
     protected StatusType status;
     protected Long delay;
     protected TimeUnit unit;
+    protected String name;
+    protected String description;
 
 
     public Long getCurrentDelay() {
