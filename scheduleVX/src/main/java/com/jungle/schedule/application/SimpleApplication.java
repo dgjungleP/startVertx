@@ -88,6 +88,13 @@ public class SimpleApplication {
             response.putHeader("content-type", "text/plain");
             response.end(Buffer.buffer("Success!"));
         });
+        router.post("/start/schedule").handler(ctx -> {
+            String id = ctx.queryParam("id").get(0);
+            schedulesManager.startSchedule(id);
+            HttpServerResponse response = ctx.response();
+            response.putHeader("content-type", "text/plain");
+            response.end(Buffer.buffer("Success!"));
+        });
     }
 
     private static void routerConfig(Router router) {

@@ -65,26 +65,46 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         }
     }
 
-    private void loadTimer(ScheduleDefinition definition) {
-        String scheduleId = fillScheduleId(definition);
-        long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
-        definition.setTimerId(id);
-        TIMER_MAP.put(scheduleId, definition);
-        startIncrease(definition, scheduleId);
+    protected void startSchedule(ScheduleDefinition definition) {
+        switch (definition.getType()) {
+            case PERIODIC:
+                startPeriodic(definition);
+                break;
+            case TIMER:
+                startTimer(definition);
+                break;
+        }
     }
 
-    private void startIncrease(ScheduleDefinition definition, String scheduleId) {
+
+    private void loadTimer(ScheduleDefinition definition) {
+        String scheduleId = fillScheduleId(definition);
+        TIMER_MAP.put(scheduleId, definition);
+        startSchedule(scheduleId);
+    }
+
+    private void startIncrease(ScheduleDefinition definition) {
         long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> this.increase());
-        INCREASE_MAP.put(scheduleId, increaseId);
+        INCREASE_MAP.put(definition.getId(), increaseId);
         RUNNING_MAP.put(definition.getTimerId(), definition);
     }
 
     private void loadPeriodic(ScheduleDefinition definition) {
         String scheduleId = fillScheduleId(definition);
+        PERIODIC_MAP.put(scheduleId, definition);
+        startSchedule(scheduleId);
+    }
+
+    private void startTimer(ScheduleDefinition definition) {
+        long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
+        definition.setTimerId(id);
+        startIncrease(definition);
+    }
+
+    private void startPeriodic(ScheduleDefinition definition) {
         long id = vertx.setPeriodic(definition.getCurrentDelay(), definition.handler());
         definition.setTimerId(id);
-        PERIODIC_MAP.put(scheduleId, definition);
-        startIncrease(definition, scheduleId);
+        startIncrease(definition);
     }
 
     private String fillScheduleId(ScheduleDefinition definition) {
@@ -112,6 +132,16 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         RUNNING_MAP.remove(timerId);
         INCREASE_MAP.remove(id);
         vertx.cancelTimer(timerId);
+    }
+
+    @Override
+    public void startSchedule(String id) {
+        ScheduleDefinition schedule = getSchedule(id);
+        if (schedule == null) {
+            System.out.println("Not found the schedule:" + id);
+            return;
+        }
+        startSchedule(schedule);
     }
 
     private ScheduleDefinition getSchedule(String id) {

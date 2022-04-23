@@ -10,4 +10,6 @@ public interface ScheduleManager {
     ManagerInfo getInfo();
 
     void stopSchedule(String id);
+
+    void startSchedule(String id);
 }
