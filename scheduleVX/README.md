@@ -17,8 +17,23 @@
 - [ ] 封装Schedule运行时
 - [ ] web
 - [ ] 控制启动和停止
+
 ##定时任务模式
 - [x] 间隔调用
 - [x] 单次调用
 - [ ] cron表达式
 - [ ] 固定次数，避开特殊时间/日期
+
+#Plugins
+###JVM监控
+> 会使用的一些基本类：
+> - ClassLoadingMXBean：监控类加载系统。
+> - CompilationMXBean：监控编译系统。
+> - GarbageCollectionMXBean：监控 JVM 的垃圾收集器。
+> - MemoryMXBean：监控 JVM 的堆和非堆内存空间。
+> - MemoryPoolMXBean：监控 JVM 分配的内存池。
+> - RuntimeMXBean：监控运行时系统。该 MXBean 提供的有用监控指标很少，但它确实提供了 JVM 的输入参数和启动时间及运行时间，这两者在其他派生指标中都是很有用的。
+> - ThreadMXBean：监控线程系统。
+>核心类：
+> - MBeanServerConnection
+   

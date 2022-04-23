@@ -8,6 +8,7 @@ import com.jungle.schedule.core.definition.VerticalScheduleDefinition;
 import com.jungle.schedule.core.manager.ScheduleManager;
 import com.jungle.schedule.core.manager.SimpleScheduleManager;
 import com.jungle.schedule.enums.ScheduleType;
+import com.jungle.schedule.plugin.JVMConsole;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -19,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.CorsHandler;
 
+import java.lang.management.ClassLoadingMXBean;
 import java.util.HashSet;
 
 
@@ -108,7 +110,7 @@ public class SimpleApplication {
         definition.setName("系统监控");
         definition.setDescription("监控系统的数据指标");
         definition.setType(ScheduleType.PERIODIC);
-        definition.setHandler(handler -> System.out.println("Heart Beats!"));
+        definition.setHandler(handler -> JVMConsole.simple());
         schedulesManager.loadSchedule(definition);
     }
 
