@@ -62,7 +62,7 @@ public class SimpleApplication {
         router.post("/load/request").handler(ctx -> {
             ctx.request().body().onSuccess(res -> {
                 JsonObject requestBody = res.toJsonObject();
-                schedulesManager.loadSchedule(RequestScheduleDefinition.buildWithJson(requestBody));
+                schedulesManager.loadSchedule(new RequestScheduleDefinition().buildWithJson(requestBody));
             });
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");

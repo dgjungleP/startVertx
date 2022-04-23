@@ -12,11 +12,11 @@ public class RequestUtil {
     private RequestUtil() {
     }
 
-    public static void execute(Method method, String url) {
+    public static void execute(HttpMethod method, String url) {
         RequestOptions options = new RequestOptions();
         options.setAbsoluteURI(url);
 
-        CLIENT.request(HttpMethod.GET, options)
+        CLIENT.request(method, options)
                 .send()
                 .onSuccess(response -> System.out.println(response.bodyAsString()))
                 .onFailure(err -> System.out.println(err.getMessage()));
