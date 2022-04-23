@@ -101,6 +101,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
         definition.setTimerId(id);
         startIncrease(definition);
+
         return true;
     }
 
