@@ -6,16 +6,25 @@ import com.jungle.schedule.core.loader.ScheduleLoader;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractScheduleManager implements ScheduleManager {
 
     protected final Vertx vertx;
     private final Map<Long, ScheduleDefinition> PERIODIC_MAP = new ConcurrentHashMap<>();
     private final Map<Long, ScheduleDefinition> TIMER_MAP = new ConcurrentHashMap<>();
+    private final Map<Long, Long> INCREASE_MAP = new ConcurrentHashMap<>();
     private final List<ScheduleLoader> SCHEDULE_LOADER_LIST = new ArrayList<>();
+    private final AtomicInteger runningTimes = new AtomicInteger(0);
+
+
+    public void increase() {
+        runningTimes.incrementAndGet();
+    }
 
     public AbstractScheduleManager(Vertx vertx) {
         this.vertx = vertx;
@@ -32,9 +41,14 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     }
 
     protected ManagerInfo buildManagerInfo() {
+        Collection<ScheduleDefinition> periodicValue = PERIODIC_MAP.values();
+        Collection<ScheduleDefinition> timerValue = TIMER_MAP.values();
         ManagerInfo info = new ManagerInfo();
-        info.setPeriodicScheduleList(new ArrayList<>(PERIODIC_MAP.values()));
-        info.setTimerScheduleList(new ArrayList<>(TIMER_MAP.values()));
+        info.setPeriodicScheduleList(new ArrayList<>(periodicValue));
+        info.setTimerScheduleList(new ArrayList<>(timerValue));
+        info.setCurrentCount(periodicValue.size() + timerValue.size());
+        info.setTotalRunningTime(runningTimes.get());
+        info.setRunningCount(0);
         return info;
 
     }
@@ -54,14 +68,22 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     private void loadTimer(ScheduleDefinition definition) {
         long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
         definition.setId(id);
+        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> {
+            this.increase();
+        });
+
         TIMER_MAP.put(id, definition);
+        INCREASE_MAP.put(id, increaseId);
     }
 
     private void loadPeriodic(ScheduleDefinition definition) {
         long id = vertx.setPeriodic(definition.getCurrentDelay(), definition.handler());
         definition.setId(id);
+        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> {
+            this.increase();
+        });
         PERIODIC_MAP.put(id, definition);
-
+        INCREASE_MAP.put(id, increaseId);
     }
 
     public void load() {

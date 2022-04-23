@@ -7,9 +7,11 @@ import lombok.ToString;
 import java.util.List;
 
 @Data
-@ToString
 public class ManagerInfo {
     private List<ScheduleDefinition> periodicScheduleList;
     private List<ScheduleDefinition> timerScheduleList;
+    private Integer currentCount;
+    private Integer runningCount;
+    private Integer totalRunningTime;
 
 }
