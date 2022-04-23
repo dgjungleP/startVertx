@@ -63,21 +63,21 @@ public class SimpleApplication {
         router.post("/load/request").handler(ctx -> {
             ctx.request().body().onSuccess(res -> {
                 JsonObject requestBody = res.toJsonObject();
-                schedulesManager.loadSchedule(new RequestScheduleDefinition().buildWithJson(requestBody));
+                Boolean success = schedulesManager.loadSchedule(new RequestScheduleDefinition().buildWithJson(requestBody));
+                HttpServerResponse response = ctx.response();
+                response.putHeader("content-type", "text/plain");
+                response.end(Buffer.buffer(success ? "Success!" : "Failed!"));
             });
-            HttpServerResponse response = ctx.response();
-            response.putHeader("content-type", "text/plain");
-            response.end(Buffer.buffer("Success!"));
         });
 
         router.post("/load/vertical").handler(ctx -> {
             ctx.request().body().onSuccess(res -> {
                 JsonObject requestBody = res.toJsonObject();
-                schedulesManager.loadSchedule(new VerticalScheduleDefinition().buildWithJson(requestBody));
+                Boolean success = schedulesManager.loadSchedule(new VerticalScheduleDefinition().buildWithJson(requestBody));
+                HttpServerResponse response = ctx.response();
+                response.putHeader("content-type", "text/plain");
+                response.end(Buffer.buffer(success ? "Success!" : "Failed!"));
             });
-            HttpServerResponse response = ctx.response();
-            response.putHeader("content-type", "text/plain");
-            response.end(Buffer.buffer("Success!"));
         });
 
         router.post("/stop/schedule").handler(ctx -> {
