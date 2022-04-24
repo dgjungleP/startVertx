@@ -9,6 +9,7 @@ import com.jungle.schedule.util.BufferUtil;
 import com.jungle.schedule.util.IDUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 
 import java.util.*;
@@ -43,13 +44,16 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     private void prepare() {
         eventBus.consumer(ConsumerType.SCHEDULE_RUNNING.name(), message -> {
-            System.out.println(message + ConsumerType.SCHEDULE_RUNNING.name());
+            String id = message.body().toString();
+            doStartSchedule(id);
         });
         eventBus.consumer(ConsumerType.SCHEDULE_STOP.name(), message -> {
-            System.out.println(message + ConsumerType.SCHEDULE_STOP.name());
+            String id = message.body().toString();
+            doStopSchedule(id);
         });
         eventBus.consumer(ConsumerType.SCHEDULE_FINISH.name(), message -> {
-            System.out.println(message + ConsumerType.SCHEDULE_FINISH.name());
+            String id = message.body().toString();
+            doFinishSchedule(id);
         });
     }
 
@@ -100,25 +104,32 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             return false;
         }
         definition.setTimerId(timerId);
-        startIncrease(runner);
         return false;
     }
 
 
-    private void startIncrease(ScheduleRunner runner) {
-        RUNNING_MAP.put(runner.getId(), runner);
-        ScheduleDefinition schedule = getSchedule(runner.getId());
+    private void doStartSchedule(String id) {
+        ScheduleDefinition schedule = getSchedule(id);
         if (schedule != null) {
+            RUNNING_MAP.put(id, schedule.makeRunner());
             this.increase();
             schedule.setStatus(StatusType.RUNNING);
         }
     }
 
+    private void doFinishSchedule(String id) {
+        ScheduleDefinition schedule = getSchedule(id);
+        RUNNING_MAP.remove(id);
+        if (schedule != null) {
+            schedule.setStatus(StatusType.INIT);
+        }
+    }
+
     private Handler<Long> makeRunningHandler(ScheduleRunner runner) {
         return res -> {
-            eventBus.send(ConsumerType.SCHEDULE_RUNNING.name(), BufferUtil.javaObj2Buffer(runner));
+            eventBus.send(ConsumerType.SCHEDULE_RUNNING.name(), Buffer.buffer(runner.getId()));
             runner.run();
-            eventBus.send(ConsumerType.SCHEDULE_FINISH.name(), BufferUtil.javaObj2Buffer(runner));
+            eventBus.send(ConsumerType.SCHEDULE_FINISH.name(), Buffer.buffer(runner.getId()));
         };
     }
 
@@ -145,18 +156,27 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             return false;
         }
         Long timerId = schedule.getTimerId();
-        if (timerId != null && !RUNNING_MAP.containsKey(schedule.getId())) {
+        if (timerId != null && !RUNNING_MAP.containsKey(id)) {
             System.out.println("This schedule :" + id + "  is not running!");
             return false;
         }
-        eventBus.send(ConsumerType.SCHEDULE_STOP.name(), BufferUtil.javaObj2Buffer(schedule));
-        stopSchedule(schedule);
+        eventBus.send(ConsumerType.SCHEDULE_STOP.name(), Buffer.buffer(id));
         return true;
     }
 
-    private void stopSchedule(ScheduleDefinition schedule) {
-        RUNNING_MAP.remove(schedule.getId());
-        vertx.cancelTimer(schedule.getTimerId());
+    private void doStopSchedule(String id) {
+        ScheduleDefinition schedule = getSchedule(id);
+        if (schedule == null) {
+            System.out.println("Not found the schedule:" + id);
+            return;
+        }
+        Long timerId = schedule.getTimerId();
+        if (timerId != null && !RUNNING_MAP.containsKey(id)) {
+            System.out.println("This schedule :" + id + "  is not running!");
+            return;
+        }
+        RUNNING_MAP.remove(id);
+        vertx.cancelTimer(timerId);
         schedule.setStatus(StatusType.STOP);
     }
 
