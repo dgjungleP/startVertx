@@ -3,11 +3,15 @@ package com.jungle.schedule.core.manager;
 import com.jungle.schedule.core.ManagerInfo;
 import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
+import com.jungle.schedule.core.runner.ScheduleRunner;
 import com.jungle.schedule.enums.StatusType;
+import com.jungle.schedule.util.BufferUtil;
 import com.jungle.schedule.util.IDUtil;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 
-import javax.sound.midi.Soundbank;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,11 +21,15 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
     protected final Vertx vertx;
     private final Map<String, ScheduleDefinition> PERIODIC_MAP = new ConcurrentHashMap<>();
     private final Map<String, ScheduleDefinition> TIMER_MAP = new ConcurrentHashMap<>();
-    private final Map<Long, ScheduleDefinition> RUNNING_MAP = new ConcurrentHashMap<>();
-    private final Map<String, Long> INCREASE_MAP = new ConcurrentHashMap<>();
+    private final Map<String, ScheduleRunner> RUNNING_MAP = new ConcurrentHashMap<>();
     private final List<ScheduleLoader> SCHEDULE_LOADER_LIST = new ArrayList<>();
     private final AtomicInteger runningTimes = new AtomicInteger(0);
+    private final EventBus eventBus;
+    public static final long FAILED_TIMER = -1;
 
+    enum ConsumerType {
+        SCHEDULE_RUNNING, SCHEDULE_STOP, SCHEDULE_FINISH
+    }
 
     public void increase() {
         runningTimes.incrementAndGet();
@@ -29,11 +37,21 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     public AbstractScheduleManager(Vertx vertx) {
         this.vertx = vertx;
+        this.eventBus = vertx.eventBus();
         prepare();
     }
 
 
     private void prepare() {
+        eventBus.consumer(ConsumerType.SCHEDULE_RUNNING.name(), message -> {
+            System.out.println(message + ConsumerType.SCHEDULE_RUNNING.name());
+        });
+        eventBus.consumer(ConsumerType.SCHEDULE_STOP.name(), message -> {
+            System.out.println(message + ConsumerType.SCHEDULE_STOP.name());
+        });
+        eventBus.consumer(ConsumerType.SCHEDULE_FINISH.name(), message -> {
+            System.out.println(message + ConsumerType.SCHEDULE_FINISH.name());
+        });
     }
 
     @Override
@@ -56,61 +74,56 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     @Override
     public Boolean loadSchedule(ScheduleDefinition definition) {
+        String scheduleId = fillScheduleId(definition);
         switch (definition.getType()) {
             case PERIODIC:
-                return loadPeriodic(definition);
+                PERIODIC_MAP.put(scheduleId, definition);
+                break;
             case TIMER:
-                return loadTimer(definition);
+                TIMER_MAP.put(scheduleId, definition);
+                break;
         }
-        return false;
+        return startSchedule(scheduleId);
     }
 
     protected Boolean startSchedule(ScheduleDefinition definition) {
+        ScheduleRunner runner = definition.makeRunner();
+        long timerId = FAILED_TIMER;
         switch (definition.getType()) {
             case PERIODIC:
-                return startPeriodic(definition);
-
+                timerId = vertx.setPeriodic(definition.getCurrentDelay(), makeRunningHandler(runner));
+                break;
             case TIMER:
-                return startTimer(definition);
-
+                timerId = vertx.setTimer(definition.getCurrentDelay(), makeRunningHandler(runner));
+                break;
         }
+        if (timerId == FAILED_TIMER) {
+            return false;
+        }
+        definition.setTimerId(timerId);
+        startIncrease(runner);
         return false;
     }
 
 
-    private Boolean loadTimer(ScheduleDefinition definition) {
-        String scheduleId = fillScheduleId(definition);
-        TIMER_MAP.put(scheduleId, definition);
-        return startSchedule(scheduleId);
+    private void startIncrease(ScheduleRunner runner) {
+        RUNNING_MAP.put(runner.getId(), runner);
+        ScheduleDefinition schedule = getSchedule(runner.getId());
+        if (schedule != null) {
+            this.increase();
+            schedule.setStatus(StatusType.RUNNING);
+        }
     }
 
-    private void startIncrease(ScheduleDefinition definition) {
-        long increaseId = vertx.setPeriodic(definition.getCurrentDelay(), res -> this.increase());
-        INCREASE_MAP.put(definition.getId(), increaseId);
-        RUNNING_MAP.put(definition.getTimerId(), definition);
-        definition.setStatus(StatusType.RUNNING);
+    private Handler<Long> makeRunningHandler(ScheduleRunner runner) {
+        return res -> {
+            DeploymentOptions options = new DeploymentOptions();
+            eventBus.send(ConsumerType.SCHEDULE_RUNNING.name(), BufferUtil.javaObject2Buffer(runner));
+            runner.run();
+            eventBus.send(ConsumerType.SCHEDULE_FINISH.name(), BufferUtil.javaObject2Buffer(runner));
+        };
     }
 
-    private Boolean loadPeriodic(ScheduleDefinition definition) {
-        String scheduleId = fillScheduleId(definition);
-        PERIODIC_MAP.put(scheduleId, definition);
-        return startSchedule(scheduleId);
-    }
-
-    private Boolean startTimer(ScheduleDefinition definition) {
-        long id = vertx.setTimer(definition.getCurrentDelay(), definition.handler());
-        definition.setTimerId(id);
-        startIncrease(definition);
-
-        return true;
-    }
-
-    private Boolean startPeriodic(ScheduleDefinition definition) {
-        long id = vertx.setPeriodic(definition.getCurrentDelay(), definition.handler());
-        definition.setTimerId(id);
-        startIncrease(definition);
-        return true;
-    }
 
     private String fillScheduleId(ScheduleDefinition definition) {
         String scheduleId = IDUtil.randomId();
@@ -134,16 +147,19 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             return false;
         }
         Long timerId = schedule.getTimerId();
-        if (timerId != null && !RUNNING_MAP.containsKey(schedule.getTimerId())) {
+        if (timerId != null && !RUNNING_MAP.containsKey(schedule.getId())) {
             System.out.println("This schedule :" + id + "  is not running!");
             return false;
         }
-        RUNNING_MAP.remove(timerId);
-        Long increaseId = INCREASE_MAP.remove(id);
-        vertx.cancelTimer(timerId);
-        vertx.cancelTimer(increaseId);
-        schedule.setStatus(StatusType.STOP);
+        eventBus.send(ConsumerType.SCHEDULE_STOP.name(), BufferUtil.javaObject2Buffer(schedule));
+        stopSchedule(schedule);
         return true;
+    }
+
+    private void stopSchedule(ScheduleDefinition schedule) {
+        RUNNING_MAP.remove(schedule.getId());
+        vertx.cancelTimer(schedule.getTimerId());
+        schedule.setStatus(StatusType.STOP);
     }
 
     @Override

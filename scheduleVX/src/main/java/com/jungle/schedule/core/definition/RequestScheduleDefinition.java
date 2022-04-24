@@ -1,6 +1,6 @@
 package com.jungle.schedule.core.definition;
 
-import cn.hutool.http.Method;
+import com.jungle.schedule.core.runner.SimpleScheduleRunner;
 import com.jungle.schedule.enums.ScheduleType;
 import com.jungle.schedule.util.RequestUtil;
 import io.vertx.core.Handler;
@@ -52,6 +52,10 @@ public class RequestScheduleDefinition extends AbstractScheduleDefinition {
 
     @Override
     public Handler<Long> handler() {
-        return res -> RequestUtil.execute(this.method, this.requestLink);
+        return res -> {
+            System.out.println("Start");
+            RequestUtil.execute(this.method, this.requestLink);
+            System.out.println("End");
+        };
     }
 }

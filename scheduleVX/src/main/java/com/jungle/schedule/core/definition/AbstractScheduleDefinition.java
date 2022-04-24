@@ -1,8 +1,9 @@
 package com.jungle.schedule.core.definition;
 
+import com.jungle.schedule.core.runner.ScheduleRunner;
+import com.jungle.schedule.core.runner.SimpleScheduleRunner;
 import com.jungle.schedule.enums.ScheduleType;
 import com.jungle.schedule.enums.StatusType;
-import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import lombok.Data;
 
@@ -40,5 +41,13 @@ public abstract class AbstractScheduleDefinition implements ScheduleDefinition {
         this.setDescription(description);
         this.setType(ScheduleType.valueOf(type));
         this.setUnit(TimeUnit.valueOf(unit));
+    }
+
+    @Override
+    public ScheduleRunner makeRunner() {
+        SimpleScheduleRunner runner = new SimpleScheduleRunner();
+        runner.setHandler(handler());
+        runner.setId(this.id);
+        return runner;
     }
 }

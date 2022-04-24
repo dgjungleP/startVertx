@@ -1,5 +1,6 @@
 package com.jungle.schedule.core.definition;
 
+import com.jungle.schedule.core.runner.ScheduleRunner;
 import com.jungle.schedule.enums.ScheduleType;
 import com.jungle.schedule.enums.StatusType;
 import io.vertx.core.Handler;
@@ -21,5 +22,6 @@ public interface ScheduleDefinition {
 
     void setStatus(StatusType status);
 
+    ScheduleRunner makeRunner();
 
 }
