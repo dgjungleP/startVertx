@@ -50,4 +50,9 @@ public abstract class AbstractScheduleDefinition implements ScheduleDefinition {
         runner.setId(this.id);
         return runner;
     }
+
+    @Override
+    public boolean isRunning() {
+        return !status.equals(StatusType.STOP);
+    }
 }

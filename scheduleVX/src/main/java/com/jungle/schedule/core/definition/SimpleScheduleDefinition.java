@@ -3,6 +3,7 @@ package com.jungle.schedule.core.definition;
 import io.vertx.core.Handler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

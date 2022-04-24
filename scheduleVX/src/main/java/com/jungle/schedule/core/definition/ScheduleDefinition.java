@@ -24,4 +24,5 @@ public interface ScheduleDefinition {
 
     ScheduleRunner makeRunner();
 
+    boolean isRunning();
 }

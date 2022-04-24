@@ -21,6 +21,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 
 public class SimpleApplication {
@@ -109,6 +110,8 @@ public class SimpleApplication {
         definition.setName("系统监控");
         definition.setDescription("监控系统的数据指标");
         definition.setType(ScheduleType.PERIODIC);
+        definition.setDelay(3L);
+        definition.setUnit(TimeUnit.SECONDS);
         definition.setHandler(handler -> JVMConsole.simple());
         schedulesManager.loadSchedule(definition);
     }
