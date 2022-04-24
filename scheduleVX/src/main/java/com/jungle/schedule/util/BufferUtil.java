@@ -8,7 +8,7 @@ public class BufferUtil {
     private BufferUtil() {
     }
 
-    public static Buffer javaObject2Buffer(Object object) {
+    public static Buffer javaObj2Buffer(Object object) {
         return Buffer.buffer(JSON.toJSONString(object));
     }
 }

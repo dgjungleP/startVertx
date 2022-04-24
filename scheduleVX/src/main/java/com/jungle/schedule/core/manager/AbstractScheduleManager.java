@@ -7,7 +7,6 @@ import com.jungle.schedule.core.runner.ScheduleRunner;
 import com.jungle.schedule.enums.StatusType;
 import com.jungle.schedule.util.BufferUtil;
 import com.jungle.schedule.util.IDUtil;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -117,10 +116,9 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     private Handler<Long> makeRunningHandler(ScheduleRunner runner) {
         return res -> {
-            DeploymentOptions options = new DeploymentOptions();
-            eventBus.send(ConsumerType.SCHEDULE_RUNNING.name(), BufferUtil.javaObject2Buffer(runner));
+            eventBus.send(ConsumerType.SCHEDULE_RUNNING.name(), BufferUtil.javaObj2Buffer(runner));
             runner.run();
-            eventBus.send(ConsumerType.SCHEDULE_FINISH.name(), BufferUtil.javaObject2Buffer(runner));
+            eventBus.send(ConsumerType.SCHEDULE_FINISH.name(), BufferUtil.javaObj2Buffer(runner));
         };
     }
 
@@ -151,7 +149,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             System.out.println("This schedule :" + id + "  is not running!");
             return false;
         }
-        eventBus.send(ConsumerType.SCHEDULE_STOP.name(), BufferUtil.javaObject2Buffer(schedule));
+        eventBus.send(ConsumerType.SCHEDULE_STOP.name(), BufferUtil.javaObj2Buffer(schedule));
         stopSchedule(schedule);
         return true;
     }
