@@ -5,7 +5,6 @@ import com.jungle.schedule.core.definition.ScheduleDefinition;
 import com.jungle.schedule.core.loader.ScheduleLoader;
 import com.jungle.schedule.core.runner.ScheduleRunner;
 import com.jungle.schedule.enums.StatusType;
-import com.jungle.schedule.util.BufferUtil;
 import com.jungle.schedule.util.IDUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -46,18 +45,22 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     private void prepare() {
         eventBus.consumer(ConsumerType.SCHEDULE_RUNNING.name(), message -> {
+            System.out.println("Get Running");
             String id = message.body().toString();
             doStartSchedule(id);
         });
         eventBus.consumer(ConsumerType.SCHEDULE_STOP.name(), message -> {
+            System.out.println("Get Stop");
             String id = message.body().toString();
             doStopSchedule(id);
 
         });
         eventBus.consumer(ConsumerType.SCHEDULE_FINISH.name(), message -> {
+            System.out.println("Get Finish");
             String id = message.body().toString();
             doFinishSchedule(id);
         });
+
     }
 
     @Override
