@@ -2,6 +2,7 @@ package com.jungle.schedule.core.runner;
 
 import io.vertx.core.Handler;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
@@ -15,12 +16,6 @@ public class SimpleScheduleRunner extends AbstractScheduleRunner {
     }
 
     public Boolean run(Long timerId) {
-        System.out.println("Do Action");
-        try {
-            TimeUnit.SECONDS.sleep(2);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         handler.handle(timerId);
         return true;
     }

@@ -45,19 +45,20 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
 
     private void prepare() {
         eventBus.consumer(ConsumerType.SCHEDULE_RUNNING.name(), message -> {
-            System.out.println("Get Running");
+            message.reply("Running");
             String id = message.body().toString();
             doStartSchedule(id);
         });
         eventBus.consumer(ConsumerType.SCHEDULE_STOP.name(), message -> {
-            System.out.println("Get Stop");
+            message.reply("Stop");
             String id = message.body().toString();
             doStopSchedule(id);
 
         });
         eventBus.consumer(ConsumerType.SCHEDULE_FINISH.name(), message -> {
-            System.out.println("Get Finish");
+            message.reply("Finish");
             String id = message.body().toString();
+
             doFinishSchedule(id);
         });
 
@@ -76,7 +77,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         info.setTimerScheduleList(new ArrayList<>(timerValue));
         info.setCurrentCount(periodicValue.size() + timerValue.size());
         info.setTotalRunningTime(runningTimes.get());
-        info.setRunningCount(RUNNING_MAP.values().size());
+        info.setRunningCount(RUNNING_MAP.keySet().size());
         return info;
 
     }
@@ -95,9 +96,9 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         return startSchedule(scheduleId);
     }
 
+
     protected Boolean startSchedule(ScheduleDefinition definition) {
         ScheduleRunner runner = definition.makeRunner();
-        System.out.println(runner.getId());
         long timerId = FAILED_TIMER;
         switch (definition.getType()) {
             case PERIODIC:
@@ -111,18 +112,17 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             return false;
         }
         definition.setTimerId(timerId);
-        return false;
+        return true;
     }
 
 
     private Handler<Long> makeRunningHandler(ScheduleRunner runner) {
-        return res -> {
-            eventBus.publish(ConsumerType.SCHEDULE_RUNNING.name(), Buffer.buffer(runner.getId()));
-            System.out.println("Start Event");
-            runner.run();
-            eventBus.publish(ConsumerType.SCHEDULE_FINISH.name(), Buffer.buffer(runner.getId()));
-            System.out.println("Finish Event");
-        };
+        return res -> eventBus.request(ConsumerType.SCHEDULE_RUNNING.name(), Buffer.buffer(runner.getId())).onSuccess(message -> {
+            if (message.isSend()) {
+                runner.run();
+                eventBus.request(ConsumerType.SCHEDULE_FINISH.name(), Buffer.buffer(runner.getId()));
+            }
+        });
     }
 
 
@@ -152,7 +152,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             System.out.println("This schedule :" + id + "  is not running!");
             return false;
         }
-        eventBus.publish(ConsumerType.SCHEDULE_STOP.name(), Buffer.buffer(id));
+        eventBus.request(ConsumerType.SCHEDULE_STOP.name(), Buffer.buffer(id));
         return true;
     }
 
@@ -162,18 +162,16 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
             RUNNING_MAP.put(id, schedule.makeRunner());
             this.increase();
             schedule.setStatus(StatusType.RUNNING);
-            System.out.println(schedule);
-
+            System.out.println("Start:" + id + " running count:" + RUNNING_MAP.keySet().size());
         }
     }
 
     private void doFinishSchedule(String id) {
         ScheduleDefinition schedule = getSchedule(id);
-        RUNNING_MAP.remove(id);
         if (schedule != null) {
+            RUNNING_MAP.remove(id);
             schedule.setStatus(StatusType.INIT);
-            System.out.println(schedule);
-
+            System.out.println("Finish:" + id + " running count:" + RUNNING_MAP.keySet().size());
         }
     }
 
@@ -191,7 +189,7 @@ public abstract class AbstractScheduleManager implements ScheduleManager {
         RUNNING_MAP.remove(id);
         vertx.cancelTimer(timerId);
         schedule.setStatus(StatusType.STOP);
-        System.out.println(schedule);
+        System.out.println("Stop:" + id + " running count:" + RUNNING_MAP.keySet().size());
     }
 
     @Override

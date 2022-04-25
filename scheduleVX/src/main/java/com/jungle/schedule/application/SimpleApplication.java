@@ -21,6 +21,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.CorsHandler;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
@@ -54,7 +55,7 @@ public class SimpleApplication {
     }
 
     private static void buildRouter(Router router) {
-        final ScheduleManager schedulesManager = (SimpleScheduleManager) vertx.getOrCreateContext().get("schedules_manager");
+        final ScheduleManager schedulesManager = vertx.getOrCreateContext().get("schedules_manager");
         router.get("/schedule-info").handler(ctx -> {
             HttpServerResponse response = ctx.response();
             response.putHeader("content-type", "text/plain");
@@ -105,16 +106,21 @@ public class SimpleApplication {
     }
 
     private static void loadBaseSchedule() {
+        Random random = new Random();
         final ScheduleManager schedulesManager = (SimpleScheduleManager) vertx.getOrCreateContext().get("schedules_manager");
-        SimpleScheduleDefinition definition = new SimpleScheduleDefinition();
-        definition.setName("系统监控");
-        definition.setDescription("监控系统的数据指标");
-        definition.setType(ScheduleType.PERIODIC);
-        definition.setDelay(3L);
-        definition.setUnit(TimeUnit.SECONDS);
-        definition.setHandler(handler -> JVMConsole.simple());
-        schedulesManager.loadSchedule(definition);
+        for (int i = 0; i < 30; i++) {
+            SimpleScheduleDefinition definition = new SimpleScheduleDefinition();
+            definition.setName("系统监控" + i);
+            definition.setDescription("监控系统的数据指标");
+            definition.setType(ScheduleType.PERIODIC);
+            definition.setDelay(3L + random.nextInt(10));
+            definition.setUnit(TimeUnit.SECONDS);
+            definition.setHandler(handler -> JVMConsole.simple());
+            schedulesManager.loadSchedule(definition);
+        }
+
     }
+
 
     private static Vertx buildVertx() {
         VertxOptions options = new VertxOptions();
